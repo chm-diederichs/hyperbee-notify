@@ -23,15 +23,16 @@ feed.ready(async () => {
   async function findDiff (old, previous, search = false) {
     let current = db.version
 
-    let i = 0
+    let changed = false
     for await (let { left, right } of db.createDiffStream(old, range)) {
-      if (left === null) continue
-      i++
+      changed = true
+      break
     }
 
     let next
-    if (i > 0) next = Math.floor((old + current) / 2) // has been a change, look newer
-    if (i === 0) {
+    if (changed) {
+      next = Math.floor((old + current) / 2) // has been a change, look newer
+    } else {
       if (search === false) return null
       next = Math.floor((old + previous) / 2) // no entries, no change, have to look older
       search = true
