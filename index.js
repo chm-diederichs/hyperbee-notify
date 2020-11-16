@@ -11,8 +11,21 @@ feed.ready(() => {
   const db = new Hyperbee(feed, { keyEncoding: 'utf-8', valueEncoding: 'utf-8' })
 
   let i = 0
+  let point = 50
+  const points = []
+  for (let i = 0; i < 10; i++) {
+    point += Math.floor(Math.random() * 50)
+    points.push(point)
+  }
+
+  // for (p of points) console.log(db.version + p)
   setInterval(() => {
-    if ((i % 14) > 10)console.log(`key${i % 14}`, 'version: ' + db.version)
-    db.put(`key${i % 14}`, `value${i++}`)
-  }, 500)
+    // if  console.log(`key${i % 14}`, 'version: ' + db.version)
+    if (points.includes(i++)) {
+      db.put(`key${100}`, `value${Date.now()}`)
+      console.log('key added:', db.version)
+    } else {
+      db.put(`key1`, `hello${i}`)
+    }
+  }, 50)
 })
