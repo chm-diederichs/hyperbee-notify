@@ -1,45 +1,10 @@
-const hypercore = require('hypercore')
-const Hyperbee = require('hyperbee')
-const replicate = require('@hyperswarm/replicator')
+const Notifier = require('./')
 
-const feed = hypercore('./db-client', process.argv[2])
+const range = { gte: 'key100', lt: 'key101', limit: -1 }
+const opts = { keyEncoding: 'utf-8', valueEncoding: 'utf-8', interval: 5000 }
 
-feed.ready(async () => {
-  replicate(feed, { lookup: true, announce: false, live: true })
+const notifier = new Notifier()
 
-  const db = new Hyperbee(feed, { keyEncoding: 'utf-8', valueEncoding: 'utf-8' })
-  const range = { gte: 'key100', lt: 'key101', limit: -1 }
-  const following = {}
+notifier.on('diff', async d => { for await (const diff of d) console.log(diff) })
 
-  let lastVersion = 0
-  setInterval(async () => {
-
-    let diffs = await findDiff(lastVersion)
-    if (diffs) console.log(diffs)
-    lastVersion = db.version - 1
-
-  }, 1000)
-
-  async function findDiff (old, previous, search = false) {
-    let current = db.version
-
-    let changed = false
-    for await (let { left, right } of db.createDiffStream(old, range)) {
-      changed = true
-      break
-    }
-
-    let next
-    if (changed) {
-      next = Math.floor((old + current) / 2) // has been a change, look newer
-    } else {
-      if (search === false) return null
-      next = Math.floor((old + previous) / 2) // no entries, no change, have to look older
-      search = true
-    }
-
-    if (next === previous) return previous
-
-    return findDiff(next, old - 1, true)
-  }
-})
+notifier.watch(Buffer.from(process.argv[2], 'hex'), range, opts)

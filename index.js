@@ -1,31 +1,57 @@
-const hypercore = require('hypercore')
 const Hyperbee = require('hyperbee')
-const replicate = require('@hyperswarm/replicator')
+const hypercore = require('hypercore')
+const Replicator = require('@hyperswarm/replicator')
 
-const feed = hypercore('./db')
-replicate(feed, { lookup: false, announce: true, live: true })
-
-feed.ready(() => {
-  console.log(feed.key.toString('hex'))
-
-  const db = new Hyperbee(feed, { keyEncoding: 'utf-8', valueEncoding: 'utf-8' })
-
-  let i = 0
-  let point = 50
-  const points = []
-  for (let i = 0; i < 10; i++) {
-    point += Math.floor(Math.random() * 50)
-    points.push(point)
+module.exports = class Notifier extends Replicator {
+  constructor (opts = {}) {
+    super(opts)
   }
 
-  // for (p of points) console.log(db.version + p)
-  setInterval(() => {
-    // if  console.log(`key${i % 14}`, 'version: ' + db.version)
-    if (points.includes(i++)) {
-      db.put(`key${100}`, `value${Date.now()}`)
-      console.log('key added:', db.version)
-    } else {
-      db.put(`key1`, `hello${i}`)
+  async watch (key, range, opts) {
+    const interval = opts.interval || 5000
+
+    const feed = hypercore('test', key, opts)
+    const db = new Hyperbee(feed, opts)
+
+    this.add(feed, { live: true })
+
+    let prev = opts.start || 0
+    setInterval(async () => {
+      const version = await findDiff(prev)
+
+      if (version) {
+        const vdb = db.checkout(version)
+        const diff = vdb.createDiffStream(prev, range)
+
+        this.emit('diff', diff)
+      }
+
+      prev = db.version - 1
+    }, interval)
+
+    async function findDiff (old, previous, search = false) {
+      if (previous === 0) return null
+
+      const current = db.version
+
+      let changed = false
+      for await (const d of db.createDiffStream(old, range)) {
+        changed = true
+        break
+      }
+
+      let next
+      if (changed) {
+        next = Math.floor((old + current) / 2) // has been a change, look newer
+      } else {
+        if (search === false) return null
+        next = Math.floor((old + previous) / 2) // no entries, no change, have to look older
+        search = true
+      }
+
+      if (next === previous) return previous
+
+      return findDiff(next, old - 1, true)
     }
-  }, 50)
-})
+  }
+}
