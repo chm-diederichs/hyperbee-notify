@@ -13,7 +13,7 @@ feed.ready(() => {
   let i = 0
   let point = 50
   const points = []
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 20; i++) {
     point += Math.floor(Math.random() * 50)
     points.push(point)
   }
