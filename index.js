@@ -1,5 +1,3 @@
-const Hyperbee = require('hyperbee')
-const hypercore = require('hypercore')
 const Replicator = require('@hyperswarm/replicator')
 
 const defaultOpts = {
@@ -14,7 +12,7 @@ module.exports = class Notifier extends Replicator {
   }
 
   async watch (db, range = {}, opts) {
-    if (!opts) return this.watch(db, watch, defaultOpts)
+    if (!opts) return this.watch(db, range, defaultOpts)
 
     const interval = opts.interval || defaultOpts.interval
 
@@ -28,7 +26,7 @@ module.exports = class Notifier extends Replicator {
         const vdb = db.checkout(version)
         const diff = vdb.createDiffStream(prev, range)
 
-        for await (let { left } of diff) {
+        for await (const { left } of diff) {
           this.emit('data', left)
         }
       }
