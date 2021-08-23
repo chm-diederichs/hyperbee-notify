@@ -58,3 +58,32 @@ class Notifier extends EventEmitter {
     }
   }
 }
+
+async function watch (db, key, opts) {
+  if (!opts) return watch(db, key, defaultOpts)
+
+  const interval = opts.interval || defaultOpts.interval
+  const initial = await db.get(key)
+  console.log(initial)
+
+  let timer
+
+  return new Promise(resolve => {
+    timer = setInterval(async () => {
+      const update = await db.get(key)
+      if (!hasChanged(update, initial)) return
+
+      clearInterval(timer)
+      resolve(update.value)
+    }, interval)
+  })
+}
+
+module.exports = {
+  Notifier,
+  watch
+}
+
+function hasChanged (a, b) {
+  return (!a && b) || b.value !== a.value
+}
