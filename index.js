@@ -1,4 +1,4 @@
-const Replicator = require('@hyperswarm/replicator')
+const { EventEmitter } = require('events')
 
 const defaultOpts = {
   keyEncoding: 'utf-8',
@@ -6,7 +6,7 @@ const defaultOpts = {
   interval: 30000
 }
 
-module.exports = class Notifier extends Replicator {
+class Notifier extends EventEmitter {
   constructor (opts = {}) {
     super(opts)
   }
@@ -15,8 +15,6 @@ module.exports = class Notifier extends Replicator {
     if (!opts) return this.watch(db, range, defaultOpts)
 
     const interval = opts.interval || defaultOpts.interval
-
-    this.add(db.feed, { live: true })
 
     let prev = opts.start || 0
     setInterval(async () => {
