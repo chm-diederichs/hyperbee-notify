@@ -1,3 +1,5 @@
+require('event-target-polyfill')
+require('yet-another-abortcontroller-polyfill')
 const hypercore = require('hypercore')
 const Hyperbee = require('hyperbee')
 const replicate = require('@hyperswarm/replicator')
@@ -16,5 +18,17 @@ replicate.replicate(feed, { lookup: true, announce: false, live: true })
 const db = new Hyperbee(feed, opts)
 
 // notifier.watch(db, range, opts)
+const ac = new AbortController()
 
-watch(db, 'key100', { interval: 1000 }).then(console.log)
+console.log('fail in 10s')
+console.time('fail')
+setTimeout(() => ac.abort(), 1000)
+ac.abort()
+
+watch(db, 'key100', { interval: 1000, signal: ac.signal })
+  .then(console.log)
+  .catch(err => {
+    console.timeEnd('fail')
+    console.error(err)
+    process.exit(0)
+  })

@@ -64,18 +64,24 @@ async function watch (db, key, opts) {
 
   const interval = opts.interval || defaultOpts.interval
   const initial = await db.get(key)
-  console.log(initial)
 
-  let timer
+  return new Promise((resolve, reject) => {
+    if (opts.signal?.aborted) reject(new Error('Aborted'))
 
-  return new Promise(resolve => {
-    timer = setInterval(async () => {
+    const timer = setInterval(async () => {
       const update = await db.get(key)
       if (!hasChanged(update, initial)) return
 
       clearInterval(timer)
       resolve(update.value)
     }, interval)
+
+    if (opts.signal) {
+      opts.signal.addEventListener('abort', () => {
+        clearInterval(timer)
+        reject(new Error('Aborted'))
+      })
+    }
   })
 }
 
