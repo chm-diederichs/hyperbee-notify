@@ -70,10 +70,10 @@ async function watch (db, key, opts) {
 
     const timer = setInterval(async () => {
       const update = await db.get(key)
-      if (!hasChanged(update, initial)) return
-
-      clearInterval(timer)
-      resolve(update.value)
+      if (hasChanged(update, initial)) {
+        clearInterval(timer)
+        resolve(update.value)
+      }
     }, interval)
 
     if (opts.signal) {
@@ -91,5 +91,7 @@ module.exports = {
 }
 
 function hasChanged (a, b) {
-  return (!a && b) || b.value !== a.value
+  if (a == null && b == null) return false
+  if ((a.value && b == null) || (a == null && b.value)) return true
+  return Buffer.compare(a.value, b.value) === 0
 }

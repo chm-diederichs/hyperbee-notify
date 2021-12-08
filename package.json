@@ -9,12 +9,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "@hyperswarm/replicator": "^2.0.2",
-    "bint8array": "^1.1.2",
-    "hyperbee": "^1.5.5",
-    "hypercore": "^9.6.0"
-  },
   "devDependencies": {},
   "repository": {
     "type": "git",
