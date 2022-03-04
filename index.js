@@ -25,7 +25,7 @@ function watchRange (db, range = {}, opts) {
       }
     }
     prev = db.version - 1
-  }, interval)
+  }, interval, opts.signal)
 
   return diffs
 
@@ -96,8 +96,9 @@ function hasChanged (a, b) {
 }
 
 // make sure call has completed before refiring
-async function awaitInterval (fn, interval, handle) {
+async function awaitInterval (fn, interval, signal, handle) {
   await fn()
+  if (signal.aborted) return
 
   handle = setTimeout(awaitInterval, interval, ...arguments)
 
