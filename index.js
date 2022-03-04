@@ -1,4 +1,4 @@
-const { Readable } = require('streamx')
+const { pipeline, Readable, Transform } = require('streamx')
 
 const defaultOpts = {
   keyEncoding: 'utf-8',
@@ -27,9 +27,12 @@ function watchRange (db, range = {}, opts) {
     prev = db.version - 1
   }, interval, opts.signal)
 
-  return diffs
+  if (!opts.transform) return diffs
 
-      const current = db.version
+  return pipeline(
+    diffs,
+    new Transform({ transform: opts.transform })
+  )
 
   async function findDiff (old, previous, search = false) {
     if (previous === 0) return null
