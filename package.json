@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/chm-diederichs/hyperbee-notify/issues"
   },
-  "homepage": "https://github.com/chm-diederichs/hyperbee-notify#readme"
+  "homepage": "https://github.com/chm-diederichs/hyperbee-notify#readme",
+  "dependencies": {
+    "streamx": "^2.12.2"
+  }
 }
