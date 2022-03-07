@@ -75,11 +75,9 @@ function hasChanged (a, b) {
 }
 
 // make sure call has completed before refiring
-async function awaitInterval (fn, interval, signal, handle) {
+async function awaitInterval (fn, interval, signal) {
   await fn()
   if (signal.aborted) return
 
-  handle = setTimeout(awaitInterval, interval, ...arguments)
-
-  return handle
+  setTimeout(awaitInterval, interval, ...arguments)
 }
