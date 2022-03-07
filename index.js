@@ -6,59 +6,35 @@ const defaultOpts = {
   interval: 30000
 }
 
-function watchRange (db, range = {}, opts) {
-  if (!opts) return watchRange(db, range, defaultOpts)
-
-  const diffs = new Readable()
+// watches for hyperbee updates over a given key range
+function watchRange (db, range = {}, opts = {}) {
+  const updates = new Readable()
   const interval = opts.interval || defaultOpts.interval
 
-  let prev = opts.start || 0
+  let vdb = db.snapshot()
 
   awaitInterval(async () => {
-    const version = await findDiff(prev)
-    if (version) {
-      const vdb = db.checkout(version)
-      const diff = vdb.createDiffStream(prev, range)
+    if (db.version === vdb.version) return
 
-      for await (const { left } of diff) {
-        diffs.push(left)
-      }
+    const diffs = db.createDiffStream(vdb)
+
+    // TODO: proper comparison
+    for await (const { left } of diffs) {
+      if (left.key >= range.lt) continue
+      if (left.key < range.gte) continue
+
+      updates.push(left)
     }
-    prev = db.version - 1
+
+    vdb = db.snapshot()
   }, interval, opts.signal)
 
-  if (!opts.transform) return diffs
+  if (!opts.transform) return updates
 
   return pipeline(
-    diffs,
+    updates,
     new Transform({ transform: opts.transform })
   )
-
-  async function findDiff (old, previous, search = false) {
-    if (previous === 0) return null
-
-    const current = db.version
-
-    let changed = false
-    for await (const d of db.createDiffStream(old, range)) {
-      changed = true
-      break
-    }
-
-    let next
-    if (changed) {
-      next = Math.floor((old + current) / 2) // has been a change, look newer
-    } else {
-      if (search === false) return null
-      next = Math.floor((old + previous) / 2) // no entries, no change, have to look older
-      search = true
-    }
-
-    console.log(next, previous)
-    if (next === previous) return previous
-
-    return findDiff(next, old - 1, true)
-  }
 }
 
 async function watch (db, key, opts) {
